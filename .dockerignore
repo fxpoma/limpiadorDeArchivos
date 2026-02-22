@@ -1,0 +1,66 @@
+# Python
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Entornos virtuales
+
+venv/
+env/
+.venv/
+
+# Git
+
+.git/
+.gitignore
+
+# Base de datos local
+
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de configuración sensibles
+
+.env
+.env.local
+*.pem
+*.key
+
+# IDEs
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos de sistema
+
+.DS_Store
+Thumbs.db
+
+# Documentación
+
+README.md
+*.md
+
+# Testing
+
+.pytest/
+.coverage
+htmlcov/
+
+# Docker
+
+Dockerfile
+docker-compose.yml
+
+# Base de datos de desarrollo
+
+database.db

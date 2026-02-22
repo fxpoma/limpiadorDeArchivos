@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Código - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title">Editar Código Python</h2>
+                <form method="POST" action="{{ url_for('edit_code', code_id=code.id) }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="code_name" class="form-label">Nombre del Código</label>
+                        <input type="text" class="form-control" id="code_name" name="code_name" value="{{ code.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="code_description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="code_description" name="code_description" rows="2">{{ code.description or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="code_content" class="form-label">Código Python</label>
+                        <textarea class="form-control font-code" id="code_content" name="code_content" rows="15" required>{{ code.code }}</textarea>
+                        <small class="text-muted">El código debe aceptar dos argumentos: archivo de entrada (sys.argv[1]) y archivo de salida (sys.argv[2]).</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="code_image" class="form-label">Imagen (opcional)</label>
+                        {% if code.image_path %}
+                        <div class="mb-2">
+                            <img src="{{ url_for('static', filename=code.image_path.replace('static/', '')) }}" alt="{{ code.name }}" style="max-width: 100px; max-height: 100px;">
+                            <p class="text-muted small">Imagen actual. Sube una nueva para reemplazarla.</p>
+                        </div>
+                        {% endif %}
+                        <input type="file" class="form-control" id="code_image" name="code_image" accept="image/*">
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                        <a href="{{ url_for('manage_codes') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.font-code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+}
+</style>
+{% endblock %}

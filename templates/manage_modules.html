@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Módulos - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Instalar Nuevo Módulo Python</h2>
+                <p class="text-muted">Solo los administradores pueden instalar módulos. Los módulos instalados estarán disponibles para todos los usuarios.</p>
+                
+                <form id="install-module-form" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="module_name" name="module_name" placeholder="Nombre del módulo (ej: pandas, numpy, openpyxl)" required>
+                        <button type="submit" class="btn btn-success">Instalar</button>
+                    </div>
+                </form>
+                
+                <div id="install-result" class="d-none"></div>
+            </div>
+        </div>
+
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title">Módulos Instalados</h2>
+                {% if modules %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Módulo</th>
+                                <th>Fecha de Instalación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for module in modules %}
+                            <tr>
+                                <td>{{ module.module_name }}</td>
+                                <td>{{ module.installed_at }}</td>
+                                <td>
+                                    <a href="{{ url_for('uninstall_module', module_name=module.module_name) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de desinstalar este módulo?')">Desinstalar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay módulos instalados. Instala algunos usando el formulario de arriba.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('install-module-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const moduleName = document.getElementById('module_name').value;
+    const resultDiv = document.getElementById('install-result');
+    const formData = new FormData();
+    formData.append('module_name', moduleName);
+    
+    resultDiv.classList.remove('d-none');
+    resultDiv.innerHTML = '<div class="alert alert-info">Instalando módulo...</div>';
+    
+    fetch('{{ url_for("install_module") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger">' + data.error + '</div>';
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Administrar Usuarios - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title">Administrar Usuarios</h2>
+                <p class="text-muted">Solo los administradores pueden ver y gestionar usuarios.</p>
+                
+                <!-- Sección de Solicitudes Pendientes -->
+                {% if pending_users %}
+                <div class="mb-5">
+                    <h4 class="text-warning">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" class="me-2">
+                            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                        </svg>
+                        Solicitudes de Registro Pendientes
+                        <span class="badge bg-warning text-dark">{{ pending_users|length }}</span>
+                    </h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-warning">
+                            <thead class="table-warning">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Fecha de Solicitud</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in pending_users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.created_at }}</td>
+                                    <td>
+                                        <a href="{{ url_for('approve_user', user_id=user.id) }}" class="btn btn-sm btn-success" onclick="return confirm('¿Aprobar la solicitud de registro de este usuario?')">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                                                <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                            </svg>
+                                            Aprobar
+                                        </a>
+                                        <a href="{{ url_for('reject_user', user_id=user.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Rechazar y eliminar esta solicitud de registro? Esta acción no se puede deshacer.')">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                            </svg>
+                                            Rechazar
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="mb-5">
+                    <h4 class="text-muted">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" class="me-2">
+                            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                        </svg>
+                        Solicitudes de Registro Pendientes
+                    </h4>
+                    <p class="text-muted">No hay solicitudes de registro pendientes.</p>
+                </div>
+                {% endif %}
+                
+                <!-- Sección de Usuarios Aprobados -->
+                <div>
+                    <h4 class="text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16" class="me-2">
+                            <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                            <path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/>
+                            <path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+                        </svg>
+                        Usuarios Aprobados
+                    </h4>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Es Admin</th>
+                                    <th>Fecha de Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in approved_users %}
+                                <tr>
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        {% if user.is_admin == 1 %}
+                                        <span class="badge bg-success">Admin</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Usuario</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.created_at }}</td>
+                                    <td>
+                                        <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                                        {% if user.id != current_user.id %}
+                                            {% if user.is_admin != 1 %}
+                                            <a href="{{ url_for('make_admin', user_id=user.id) }}" class="btn btn-sm btn-primary" onclick="return confirm('¿Hacer a este usuario administrador?')">Hacer Admin</a>
+                                            {% else %}
+                                            <a href="{{ url_for('remove_admin', user_id=user.id) }}" class="btn btn-sm btn-secondary" onclick="return confirm('¿Quitar admin a este usuario?')">Quitar Admin</a>
+                                            {% endif %}
+                                            <a href="{{ url_for('delete_user', user_id=user.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este usuario y todos sus códigos? Esta acción no se puede deshacer.')">Eliminar</a>
+                                        {% else %}
+                                        <span class="text-muted small">(Tú)</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

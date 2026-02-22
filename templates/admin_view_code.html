@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Ver Código - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg mb-3">
+            <div class="card-body">
+                <h2 class="card-title">Detalles del Código</h2>
+                <p><strong>Nombre:</strong> {{ code.name }}</p>
+                <p><strong>Usuario:</strong> {{ code.username }} ({{ code.email }})</p>
+                <p><strong>Descripción:</strong> {{ code.description or 'Sin descripción' }}</p>
+                <p><strong>Fecha de Creación:</strong> {{ code.created_at }}</p>
+                {% if code.image_path %}
+                <p><strong>Imagen:</strong></p>
+                <img src="{{ url_for('static', filename=code.image_path.replace('static/', '')) }}" alt="{{ code.name }}" style="max-width: 200px; max-height: 200px;">
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h3>Código Python</h3>
+                <pre class="bg-dark text-light p-3" style="overflow-x: auto;"><code>{{ code.code }}</code></pre>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="{{ url_for('admin_codes') }}" class="btn btn-secondary">Volver</a>
+            <a href="{{ url_for('admin_delete_code', code_id=code.id) }}" class="btn btn-danger" onclick="return confirm('¿Eliminar este código?')">Eliminar Código</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

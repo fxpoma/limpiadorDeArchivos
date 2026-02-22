@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Gestionar Códigos - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Agregar Nuevo Código Python</h2>
+                <form method="POST" action="{{ url_for('manage_codes') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="code_name" class="form-label">Nombre del Código</label>
+                        <input type="text" class="form-control" id="code_name" name="code_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="code_description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="code_description" name="code_description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="code_content" class="form-label">Código Python</label>
+                        <textarea class="form-control font-code" id="code_content" name="code_content" rows="10" placeholder="import sys&#10;import shutil&#10;&#10;input_file = sys.argv[1]&#10;output_file = sys.argv[2]&#10;&#10;# Tu código aquí&#10;# Ejemplo: copiar archivo&#10;shutil.copy(input_file, output_file)" required></textarea>
+                        <small class="text-muted">El código debe aceptar dos argumentos: archivo de entrada y archivo de salida.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="code_image" class="form-label">Imagen (opcional)</label>
+                        <input type="file" class="form-control" id="code_image" name="code_image" accept="image/*">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Guardar Código</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title">Mis Códigos Guardados</h2>
+                {% if codes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Imagen</th>
+                                <th>Fecha de Creación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for code in codes %}
+                            <tr>
+                                <td>{{ code.name }}</td>
+                                <td>{{ code.description }}</td>
+                                <td>
+                                    {% if code.image_path %}
+                                    <img src="{{ url_for('static', filename=code.image_path.replace('static/', '')) }}" alt="{{ code.name }}" style="max-width: 50px; max-height: 50px;">
+                                    {% else %}
+                                    <span class="text-muted">Sin imagen</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ code.created_at }}</td>
+                                <td>
+                                    <a href="{{ url_for('edit_code', code_id=code.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                                    <a href="{{ url_for('delete_code', code_id=code.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este código?')">Eliminar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No tienes códigos guardados. Crea uno usando el formulario de arriba.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.font-code {
+    font-family: 'Courier New', Courier, monospace;
+}
+</style>
+{% endblock %}

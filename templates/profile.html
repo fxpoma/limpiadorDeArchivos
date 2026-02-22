@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg mb-4">
+            <div class="card-body">
+                <h2 class="card-title" style="color: var(--text-primary);">Bienvenido, {{ username }}</h2>
+                <hr style="border-color: var(--border-color);">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4 style="color: var(--text-primary);">Información de la Cuenta</h4>
+                        <p style="color: var(--text-primary);"><strong>Usuario:</strong> {{ username }}</p>
+                        <p style="color: var(--text-primary);"><strong>Estado:</strong> <span style="color: var(--success-color);">Activo</span></p>
+                        {% if current_user.is_admin %}
+                        <p style="color: var(--text-primary);"><strong>Rol:</strong> <span class="badge bg-success">Administrador</span></p>
+                        {% else %}
+                        <p style="color: var(--text-primary);"><strong>Rol:</strong> <span class="badge bg-secondary">Usuario</span></p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h4 style="color: var(--text-primary);">Acciones Rápidas</h4>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('index') }}" class="btn btn-primary">Ir a Procesar Archivos</a>
+                            <a href="{{ url_for('manage_codes') }}" class="btn btn-success">Gestionar Códigos Python</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-lg mb-4">
+            <div class="card-body">
+                <h4 class="card-title" style="color: var(--text-primary);">Cambiar Contraseña</h4>
+                <form method="POST" action="{{ url_for('change_password') }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="current_password" class="form-label" style="color: var(--text-primary);">Contraseña Actual</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="new_password" class="form-label" style="color: var(--text-primary);">Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="confirm_password" class="form-label" style="color: var(--text-primary);">Confirmar Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning">Cambiar Contraseña</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h4 style="color: var(--text-primary);">Códigos Python Guardados</h4>
+                {% if codes %}
+                <div class="row">
+                    {% for code in codes %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card" style="background-color: var(--bg-card); border-color: var(--border-color);">
+                            <div class="card-body">
+                                <h5 class="card-title" style="color: var(--text-primary);">{{ code.name }}</h5>
+                                <p class="card-text" style="color: var(--text-secondary);">{{ code.description }}</p>
+                                <small style="color: var(--text-muted);">Creado: {{ code.created_at }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted);">No tienes códigos guardados. <a href="{{ url_for('manage_codes') }}">Crea uno ahora</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

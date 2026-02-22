@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Códigos de Usuarios - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title">Códigos de Todos los Usuarios</h2>
+                <p class="text-muted">Esta página solo es visible para administradores.</p>
+                
+                {% if codes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th>Descripción</th>
+                                <th>Fecha de Creación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for code in codes %}
+                            <tr>
+                                <td>{{ code.id }}</td>
+                                <td>{{ code.name }}</td>
+                                <td>{{ code.username }}</td>
+                                <td>{{ code.email }}</td>
+                                <td>{{ code.description[:50] }}{% if code.description and code.description|length > 50 %}...{% endif %}</td>
+                                <td>{{ code.created_at }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin_view_code', code_id=code.id) }}" class="btn btn-sm btn-info">Ver</a>
+                                    <a href="{{ url_for('admin_delete_code', code_id=code.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este código?')">Eliminar</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No hay códigos guardados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

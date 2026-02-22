@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Procesar Archivos - Limpiador de Archivos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Arrastra y Suelta tu Archivo</h2>
+                
+                <!-- Área de drop -->
+                <div id="drop-zone" class="drop-zone text-center p-5 border border-3 border-secondary rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-muted mb-3" viewBox="0 0 16 16">
+                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                        <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                    </svg>
+                    <p class="mb-2">Arrastra y suelta tu archivo aquí</p>
+                    <p class="text-muted">o</p>
+                    <input type="file" id="file-input" class="d-none" accept=".txt,.csv,.json,.xml,.xlsx,.xls,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif">
+                    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Seleccionar Archivo</button>
+                    <p class="mt-3 text-muted small">Tamaño máximo: 16MB</p>
+                </div>
+
+                <!-- Estado del archivo -->
+                <div id="file-status" class="mt-4 d-none">
+                    <div class="alert alert-info">
+                        <strong>Archivo seleccionado:</strong> <span id="filename"></span>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="text-center mt-4 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Procesando archivo...</p>
+                </div>
+
+                <!-- Resultado -->
+                <div id="result" class="mt-4 d-none">
+                    <div id="success-message" class="alert alert-success d-none">
+                        <h4>¡Archivo procesado exitosamente!</h4>
+                        <p>Tu archivo ha sido procesado y está listo para descargar.</p>
+                        <a id="download-btn" href="#" class="btn btn-success">Descargar Archivo Procesado</a>
+                    </div>
+                    <div id="error-message" class="alert alert-danger d-none">
+                        <h4>Error al procesar el archivo</h4>
+                        <p id="error-text"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para seleccionar código -->
+<div class="modal fade" id="code-select-modal" tabindex="-1" aria-labelledby="codeSelectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="codeSelectModalLabel">Seleccionar Código de Procesamiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="no-codes-message" class="d-none">
+                    <p class="text-muted">No tienes códigos guardados. <a href="{{ url_for('manage_codes') }}">Crea uno ahora</a></p>
+                </div>
+                <div id="codes-list" class="row">
+                    <!-- Los códigos se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="process-btn" disabled>Procesar Archivo</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentFile = null;
+let currentFilePath = null;
+let selectedCodeId = null;
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const fileStatus = document.getElementById('file-status');
+const filenameSpan = document.getElementById('filename');
+const loading = document.getElementById('loading');
+const result = document.getElementById('result');
+const successMessage = document.getElementById('success-message');
+const errorMessage = document.getElementById('error-message');
+const errorText = document.getElementById('error-text');
+const downloadBtn = document.getElementById('download-btn');
+const codeSelectModal = new bootstrap.Modal(document.getElementById('code-select-modal'));
+const codesList = document.getElementById('codes-list');
+const noCodesMessage = document.getElementById('no-codes-message');
+const processBtn = document.getElementById('process-btn');
+
+// Drag and drop events
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-primary', 'bg-light');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-light');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-light');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileUpload(files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFileUpload(e.target.files[0]);
+    }
+});
+
+function handleFileUpload(file) {
+    currentFile = file;
+    filenameSpan.textContent = file.name;
+    fileStatus.classList.remove('d-none');
+    
+    // Resetear estados
+    result.classList.add('d-none');
+    successMessage.classList.add('d-none');
+    errorMessage.classList.add('d-none');
+    
+    // Subir archivo al servidor
+    uploadFile(file);
+}
+
+function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    loading.classList.remove('d-none');
+    
+    fetch('{{ url_for("upload_file") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loading.classList.add('d-none');
+        
+        if (data.success) {
+            currentFilePath = data.file_path;
+            
+            // Mostrar modal para seleccionar código
+            if (data.codes && data.codes.length > 0) {
+                showCodesModal(data.codes);
+            } else {
+                noCodesMessage.classList.remove('d-none');
+                codesList.classList.add('d-none');
+                codeSelectModal.show();
+            }
+        } else {
+            showError(data.error || 'Error al subir el archivo');
+        }
+    })
+    .catch(error => {
+        loading.classList.add('d-none');
+        showError('Error de conexión: ' + error.message);
+    });
+}
+
+function showCodesModal(codes) {
+    noCodesMessage.classList.add('d-none');
+    codesList.classList.remove('d-none');
+    codesList.innerHTML = '';
+    
+    codes.forEach(code => {
+        const codeCard = document.createElement('div');
+        codeCard.className = 'col-md-6 mb-3';
+        
+        let imageHtml = '';
+        if (code.image_path) {
+            imageHtml = `<img src="${code.image_path}" alt="${code.name}" class="card-img-top" style="max-height: 150px; object-fit: cover;">`;
+        }
+        
+        codeCard.innerHTML = `
+            <div class="card code-card h-100" data-code-id="${code.id}" style="cursor: pointer;">
+                ${imageHtml}
+                <div class="card-body">
+                    <h5 class="card-title">${code.name}</h5>
+                    <p class="card-text small">${code.description || 'Sin descripción'}</p>
+                </div>
+            </div>
+        `;
+        
+        codeCard.querySelector('.code-card').addEventListener('click', () => selectCode(code.id, code.name));
+        codesList.appendChild(codeCard);
+    });
+    
+    selectedCodeId = null;
+    processBtn.disabled = true;
+    codeSelectModal.show();
+}
+
+function selectCode(codeId, codeName) {
+    // Deseleccionar todos
+    document.querySelectorAll('.code-card').forEach(card => {
+        card.classList.remove('border-primary', 'border-3');
+    });
+    
+    // Seleccionar el actual
+    const selectedCard = document.querySelector(`[data-code-id="${codeId}"]`);
+    selectedCard.classList.add('border-primary', 'border-3');
+    
+    selectedCodeId = codeId;
+    processBtn.disabled = false;
+}
+
+processBtn.addEventListener('click', () => {
+    if (!selectedCodeId || !currentFilePath) {
+        showError('Por favor, selecciona un código de procesamiento');
+        return;
+    }
+    
+    processFile();
+});
+
+function processFile() {
+    loading.classList.remove('d-none');
+    codeSelectModal.hide();
+    
+    fetch('{{ url_for("process_file") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            file_path: currentFilePath,
+            code_id: selectedCodeId,
+            filename: currentFile.name
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loading.classList.add('d-none');
+        result.classList.remove('d-none');
+        
+        if (data.success) {
+            successMessage.classList.remove('d-none');
+            downloadBtn.href = `/download/${data.output_file}`;
+            downloadBtn.setAttribute('download', data.filename);
+            
+            // Limpiar archivos después de un tiempo
+            cleanupFiles(currentFilePath, data.output_file);
+        } else {
+            errorMessage.classList.remove('d-none');
+            errorText.textContent = data.error;
+            
+            // Limpiar archivo de entrada en caso de error
+            cleanupFiles(currentFilePath, null);
+        }
+    })
+    .catch(error => {
+        loading.classList.add('d-none');
+        result.classList.remove('d-none');
+        showError('Error de conexión: ' + error.message);
+    });
+}
+
+function showError(message) {
+    result.classList.remove('d-none');
+    errorMessage.classList.remove('d-none');
+    errorText.textContent = message;
+}
+
+function cleanupFiles(inputFile, outputFile) {
+    // Limpiar después de 30 segundos
+    setTimeout(() => {
+        fetch('{{ url_for("cleanup_files") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                input_file: inputFile,
+                output_file: outputFile
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Archivos limpiados:', data.success);
+        })
+        .catch(error => {
+            console.error('Error al limpiar archivos:', error);
+        });
+    }, 30000);
+}
+</script>
+{% endblock %}
