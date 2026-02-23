@@ -34,7 +34,12 @@ os.makedirs(app.config['CODES_FOLDER'], exist_ok=True)
 
 
 def get_db_connection():
-    conn = sqlite3.connect('database.db')
+    # Usar el directorio /app/data para la base de datos (volumen persistente)
+    import os
+    db_dir = '/app/data'
+    os.makedirs(db_dir, exist_ok=True)
+    db_path = os.path.join(db_dir, 'database.db')
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 

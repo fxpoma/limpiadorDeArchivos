@@ -5,10 +5,11 @@ version: 1.0.0
 
 services:
   web:
-    image: limpiador-archivos:latest
     build:
       dockerfile: ./Dockerfile
       context: ./
+      method: docker
+    image: limpiador-archivos:latest
     ports:
       - target: 5000
         published: 5000
@@ -18,7 +19,9 @@ services:
       - FLASK_RUN_PORT=5000
       - FLASK_DEBUG=false
     volumes:
-      - ./database.db:/app/database.db
+      # Volumen con nombre para persistir la base de datos
+      - limpiador-db:/app/data
+      # Archivos estáticos
       - ./static:/app/static
     restart: always
     healthcheck:
@@ -27,3 +30,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    deploy:
+      command: /start.sh
+
+# Volúmenes con nombre para persistencia de datos
+volumes:
+  limpiador-db:
+    driver: local

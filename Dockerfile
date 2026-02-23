@@ -11,6 +11,7 @@ ENV PYTHONUNBUFFERED=1
 # Instalar dependencias del sistema necesarias
 RUN apt-get update && apt-get install -y \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements primero para aprovechar caché de Docker
@@ -23,13 +24,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Crear directorios necesarios
-RUN mkdir -p static/uploads static/codes
+RUN mkdir -p static/uploads static/codes data
+
+# Dar permisos al script de inicio
+RUN chmod +x start.sh
 
 # Exponer puerto
 EXPOSE 5000
 
-# Script de inicio
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
-
+# Comando de inicio por defecto
 CMD ["/start.sh"]
