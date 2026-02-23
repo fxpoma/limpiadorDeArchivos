@@ -306,3 +306,107 @@ Las contribuciones son bienvenidas. Por favor, sigue los pasos:
 ## Licencia
 
 MIT License - Ver LICENSE.md para más detalles
+
+---
+
+## 📊 Sistema de Estadísticas
+
+### Actualización a la versión con estadísticas
+
+A partir de esta versión, el sistema incluye un módulo de estadísticas que registra y muestra información sobre el uso de la aplicación. Para actualizar desde una versión anterior, sigue estos pasos:
+
+#### 1. Actualizar la aplicación
+
+```bash
+# Descargar los nuevos archivos
+git pull origin main
+
+# O si estás usando Dokploy, simplemente espera a que se despliegue automáticamente
+```
+
+#### 2. La base de datos se actualiza automáticamente
+
+El sistema detecta automáticamente las bases de datos existentes y agrega las nuevas tablas necesarias:
+
+- `system_stats` - Estadísticas generales del sistema
+- `activity_logs` - Registro de actividades de usuarios
+- `user_stats` - Estadísticas individuales por usuario
+- `daily_stats` - Estadísticas diarias de uso
+
+**No necesitas hacer nada manualmente** - Las tablas se crean automáticamente cuando inicias la aplicación.
+
+#### 3. Acceder al Dashboard de Estadísticas
+
+1. Inicia sesión como administrador
+2. Ve al menú **Administración**
+3. Selecciona **Estadísticas**
+
+El dashboard muestra:
+
+- Total de usuarios (aprobados y pendientes)
+- Códigos guardados
+- Total de logins
+- Archivos procesados
+- Estadísticas de los últimos 7 días
+- Resumen mensual
+- Top 10 usuarios más activos
+- Actividad reciente del sistema
+
+#### 4. Estadísticas que se registran automáticamente
+
+El sistema registra las siguientes estadísticas automáticamente:
+
+| Tipo | Descripción |
+|------|-------------|
+| **Visitas** | Cada acceso a la página principal |
+| **Logueos** | Cada vez que un usuario inicia sesión |
+| **Registros** | Nuevas cuentas de usuario |
+| **Procesamientos** | Archivos procesados exitosamente |
+| **Actividad** | Registro detallado de acciones por usuario |
+
+#### 5. API de Estadísticas
+
+Si necesitas acceder a las estadísticas desde código externo, puedes usar el endpoint:
+
+```
+GET /api/stats/summary
+```
+
+**Requiere:** Estar autenticado como administrador
+
+**Respuesta ejemplo:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "total_users": 10,
+    "total_codes": 25,
+    "total_logins": 150,
+    "total_files_processed": 89,
+    "today": {
+      "page_views": 45,
+      "logins": 5,
+      "file_processing": 3
+    }
+  }
+}
+```
+
+#### Solución de problemas
+
+**No veo datos en el dashboard:**
+
+- Los datos comienzan a recopilarse después de la actualización
+- Visita la aplicación y realiza algunas acciones para generar datos
+
+**Error de base de datos:**
+
+- El sistema crea las tablas automáticamente
+- Si tienes problemas, puedes eliminar la base de datos y se recreará
+- Alternativamente, las tablas se crean con `CREATE TABLE IF NOT EXISTS`
+
+**Las estadísticas no se registran:**
+
+- Verifica que estés usando la versión actualizada de app.py
+- Revisa los logs de la aplicación para ver errores

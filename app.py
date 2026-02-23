@@ -88,6 +88,94 @@ def create_tables():
         )
     ''')
     
+    # ==================== TABLAS DE ESTADÍSTICAS (Retrocompatible) ====================
+    # Tabla de estadísticas generales del sistema
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS system_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            stat_type TEXT NOT NULL,
+            stat_value INTEGER DEFAULT 0,
+            stat_date DATE DEFAULT CURRENT_DATE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Tabla de logs de actividad
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS activity_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT NOT NULL,
+            details TEXT,
+            ip_address TEXT,
+            user_agent TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Tabla de estadísticas de uso por usuario
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS user_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            login_count INTEGER DEFAULT 0,
+            file_processed_count INTEGER DEFAULT 0,
+            last_login TIMESTAMP,
+            last_activity TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Tabla de estadísticas diarias
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS daily_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            stat_date DATE DEFAULT CURRENT_DATE,
+            page_views INTEGER DEFAULT 0,
+            unique_visitors INTEGER DEFAULT 0,
+            logins INTEGER DEFAULT 0,
+            file_processing INTEGER DEFAULT 0,
+            new_users INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Verificar y crear tabla user_stats si no existe (para bases de datos existentes)
+    try:
+        conn.execute('SELECT login_count FROM user_stats LIMIT 1')
+    except sqlite3.OperationalError:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS user_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                login_count INTEGER DEFAULT 0,
+                file_processed_count INTEGER DEFAULT 0,
+                last_login TIMESTAMP,
+                last_activity TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        ''')
+    
+    # Verificar y crear tabla daily_stats si no existe
+    try:
+        conn.execute('SELECT page_views FROM daily_stats LIMIT 1')
+    except sqlite3.OperationalError:
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS daily_stats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                stat_date DATE DEFAULT CURRENT_DATE,
+                page_views INTEGER DEFAULT 0,
+                unique_visitors INTEGER DEFAULT 0,
+                logins INTEGER DEFAULT 0,
+                file_processing INTEGER DEFAULT 0,
+                new_users INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    
     # Crear admin si no existe (comentado para que el primer usuario sea admin)
     # admin = conn.execute('SELECT * FROM users WHERE is_admin = 1').fetchone()
     # if not admin:
@@ -100,6 +188,91 @@ def create_tables():
     
     conn.commit()
     conn.close()
+
+
+# ==================== FUNCIONES DE ESTADÍSTICAS ====================
+
+def record_activity(user_id, action, details=None, ip_address=None, user_agent=None):
+    """Registra una actividad en los logs"""
+    try:
+        conn = get_db_connection()
+        conn.execute(
+            'INSERT INTO activity_logs (user_id, action, details, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
+            (user_id, action, details, ip_address, user_agent)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error al registrar actividad: {e}")
+
+
+def update_user_stats(user_id, login=False, file_processed=False):
+    """Actualiza las estadísticas de un usuario"""
+    try:
+        conn = get_db_connection()
+        stats = conn.execute('SELECT * FROM user_stats WHERE user_id = ?', (user_id,)).fetchone()
+        
+        if stats:
+            # Actualizar stats existentes
+            if login:
+                conn.execute(
+                    'UPDATE user_stats SET login_count = login_count + 1, last_login = CURRENT_TIMESTAMP, last_activity = CURRENT_TIMESTAMP WHERE user_id = ?',
+                    (user_id,)
+                )
+            elif file_processed:
+                conn.execute(
+                    'UPDATE user_stats SET file_processed_count = file_processed_count + 1, last_activity = CURRENT_TIMESTAMP WHERE user_id = ?',
+                    (user_id,)
+                )
+        else:
+            # Crear stats nuevos
+            login_count = 1 if login else 0
+            file_count = 1 if file_processed else 0
+            conn.execute(
+                'INSERT INTO user_stats (user_id, login_count, file_processed_count, last_login, last_activity) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+                (user_id, login_count, file_count)
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error al actualizar stats de usuario: {e}")
+
+
+def update_daily_stats(page_view=False, login=False, file_processing=False, new_user=False):
+    """Actualiza las estadísticas diarias"""
+    try:
+        conn = get_db_connection()
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        stats = conn.execute('SELECT * FROM daily_stats WHERE stat_date = ?', (today,)).fetchone()
+        
+        if stats:
+            # Actualizar stats existentes
+            if page_view:
+                conn.execute('UPDATE daily_stats SET page_views = page_views + 1 WHERE stat_date = ?', (today,))
+            if login:
+                conn.execute('UPDATE daily_stats SET logins = logins + 1 WHERE stat_date = ?', (today,))
+            if file_processing:
+                conn.execute('UPDATE daily_stats SET file_processing = file_processing + 1 WHERE stat_date = ?', (today,))
+            if new_user:
+                conn.execute('UPDATE daily_stats SET new_users = new_users + 1 WHERE stat_date = ?', (today,))
+        else:
+            # Crear stats nuevos
+            page_views = 1 if page_view else 0
+            logins = 1 if login else 0
+            file_processing_count = 1 if file_processing else 0
+            new_users_count = 1 if new_user else 0
+            conn.execute(
+                'INSERT INTO daily_stats (stat_date, page_views, logins, file_processing, new_users) VALUES (?, ?, ?, ?, ?)',
+                (today, page_views, logins, file_processing_count, new_users_count)
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error al actualizar stats diarios: {e}")
+
+
+# ==================== CLASE DE USUARIO ====================
 
 
 class User(UserMixin):
@@ -138,6 +311,12 @@ def index():
     conn = get_db_connection()
     user_count = conn.execute('SELECT COUNT(*) as count FROM users').fetchone()
     conn.close()
+    
+    # Registrar visita a página
+    try:
+        update_daily_stats(page_view=True)
+    except Exception as e:
+        print(f"Error al registrar visita: {e}")
     
     if user_count['count'] == 0:
         return redirect(url_for('register'))
@@ -188,6 +367,15 @@ def login():
             
             user_obj = User(user['id'], user['username'], user['email'], user['password'], is_admin, status)
             login_user(user_obj)
+            
+            # Registrar estadísticas de login
+            try:
+                update_user_stats(user['id'], login=True)
+                update_daily_stats(login=True)
+                record_activity(user['id'], 'login', 'Usuario inició sesión', request.remote_addr, request.headers.get('User-Agent'))
+            except Exception as e:
+                print(f"Error al registrar stats de login: {e}")
+            
             flash('Inicio de sesión exitoso', 'success')
             return redirect(url_for('index'))
         else:
@@ -221,10 +409,21 @@ def register():
         user_is_admin = 1 if is_first_user else 0
         
         try:
-            conn.execute('INSERT INTO users (username, email, password, status, is_admin) VALUES (?, ?, ?, ?, ?)',
+            cursor = conn.execute('INSERT INTO users (username, email, password, status, is_admin) VALUES (?, ?, ?, ?, ?)',
                          (username, email, hashed_password, user_status, user_is_admin))
             conn.commit()
+            new_user_id = cursor.lastrowid
             conn.close()
+            
+            # Registrar nuevo usuario en estadísticas
+            try:
+                update_daily_stats(new_user=True)
+                # Usar request solo si está disponible
+                ip_addr = getattr(request, 'remote_addr', None)
+                user_agnt = getattr(request, 'headers', lambda: {}).get('User-Agent', None) if request else None
+                record_activity(new_user_id, 'register', f'Nuevo usuario registrado: {username}', ip_addr, user_agnt)
+            except Exception as e:
+                print(f"Error al registrar stats de nuevo usuario: {e}")
             
             if is_first_user:
                 flash('Registro exitoso! Has sido registrado como administrador.', 'success')
@@ -533,6 +732,14 @@ def process_file():
             'output_file': output_filename,
             'filename': output_filename
         })
+        
+        # Registrar procesamiento de archivo exitoso
+        try:
+            update_user_stats(current_user.id, file_processed=True)
+            update_daily_stats(file_processing=True)
+            record_activity(current_user.id, 'file_processed', f'Archivo procesado: {file_path}', request.remote_addr, request.headers.get('User-Agent'))
+        except Exception as e:
+            print(f"Error al registrar stats de procesamiento: {e}")
         
         final_filename = output_filename
         
@@ -980,6 +1187,150 @@ def change_password():
         return redirect(url_for('profile'))
     
     return render_template('change_password.html', username=current_user.username)
+
+
+# ==================== DASHBOARD DE ESTADÍSTICAS ====================
+
+@app.route('/admin_stats')
+@login_required
+def admin_stats():
+    """Dashboard de estadísticas del sistema (solo admin)"""
+    if not current_user.is_admin:
+        flash('No tienes permisos de administrador', 'danger')
+        return redirect(url_for('index'))
+    
+    conn = get_db_connection()
+    
+    # Estadísticas generales
+    total_users = conn.execute('SELECT COUNT(*) as count FROM users').fetchone()
+    total_codes = conn.execute('SELECT COUNT(*) as count FROM processing_codes').fetchone()
+    approved_users = conn.execute("SELECT COUNT(*) as count FROM users WHERE status = 'approved'").fetchone()
+    pending_users = conn.execute("SELECT COUNT(*) as count FROM users WHERE status = 'pending'").fetchone()
+    
+    # Estadísticas de usuarios
+    user_stats = conn.execute('''
+        SELECT 
+            SUM(login_count) as total_logins,
+            SUM(file_processed_count) as total_files_processed,
+            COUNT(*) as active_users
+        FROM user_stats
+    ''').fetchone()
+    
+    # Estadísticas de los últimos 7 días
+    last_7_days = conn.execute('''
+        SELECT 
+            stat_date,
+            page_views,
+            logins,
+            file_processing,
+            new_users
+        FROM daily_stats 
+        WHERE stat_date >= date('now', '-7 days')
+        ORDER BY stat_date DESC
+    ''').fetchall()
+    
+    # Top usuarios más activos
+    top_users = conn.execute('''
+        SELECT 
+            u.username,
+            us.login_count,
+            us.file_processed_count,
+            us.last_login,
+            us.last_activity
+        FROM user_stats us
+        JOIN users u ON us.user_id = u.id
+        ORDER BY (us.login_count + us.file_processed_count) DESC
+        LIMIT 10
+    ''').fetchall()
+    
+    # Actividad reciente
+    recent_activity = conn.execute('''
+        SELECT 
+            al.action,
+            al.details,
+            al.ip_address,
+            al.created_at,
+            u.username
+        FROM activity_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+        ORDER BY al.created_at DESC
+        LIMIT 20
+    ''').fetchall()
+    
+    # Estadísticas mensuales
+    monthly_stats = conn.execute('''
+        SELECT 
+            strftime('%Y-%m', stat_date) as month,
+            SUM(page_views) as total_views,
+            SUM(logins) as total_logins,
+            SUM(file_processing) as total_processing,
+            SUM(new_users) as total_new_users
+        FROM daily_stats
+        WHERE stat_date >= date('now', '-12 months')
+        GROUP BY strftime('%Y-%m', stat_date)
+        ORDER BY month DESC
+    ''').fetchall()
+    
+    conn.close()
+    
+    return render_template(
+        'admin_stats.html',
+        username=current_user.username,
+        total_users=total_users['count'],
+        total_codes=total_codes['count'],
+        approved_users=approved_users['count'],
+        pending_users=pending_users['count'],
+        user_stats=user_stats,
+        last_7_days=last_7_days,
+        top_users=top_users,
+        recent_activity=recent_activity,
+        monthly_stats=monthly_stats
+    )
+
+
+# ==================== API DE ESTADÍSTICAS (JSON) ====================
+
+@app.route('/api/stats/summary')
+@login_required
+def api_stats_summary():
+    """API para obtener resumen de estadísticas en JSON"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'error': 'No tienes permisos de administrador'})
+    
+    conn = get_db_connection()
+    
+    # Resumen general
+    total_users = conn.execute('SELECT COUNT(*) as count FROM users').fetchone()
+    total_codes = conn.execute('SELECT COUNT(*) as count FROM processing_codes').fetchone()
+    
+    # Stats de usuarios
+    user_stats = conn.execute('''
+        SELECT 
+            SUM(login_count) as total_logins,
+            SUM(file_processed_count) as total_files
+        FROM user_stats
+    ''').fetchone()
+    
+    # Stats de hoy
+    today = datetime.now().strftime('%Y-%m-%d')
+    today_stats = conn.execute('SELECT * FROM daily_stats WHERE stat_date = ?', (today,)).fetchone()
+    
+    conn.close()
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'total_users': total_users['count'],
+            'total_codes': total_codes['count'],
+            'total_logins': user_stats['total_logins'] or 0,
+            'total_files_processed': user_stats['total_files'] or 0,
+            'today': {
+                'page_views': today_stats['page_views'] if today_stats else 0,
+                'logins': today_stats['logins'] if today_stats else 0,
+                'file_processing': today_stats['file_processing'] if today_stats else 0
+            }
+        }
+    })
 
 
 if __name__ == '__main__':
