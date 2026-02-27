@@ -8,7 +8,7 @@
         <div class="card shadow-lg mb-4">
             <div class="card-body">
                 <h2 class="card-title">Agregar Nuevo Código Python</h2>
-                <form method="POST" action="{{ url_for('manage_codes') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ url_for('codes.manage_codes') }}" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="code_name" class="form-label">Nombre del Código</label>
                         <input type="text" class="form-control" id="code_name" name="code_name" required>

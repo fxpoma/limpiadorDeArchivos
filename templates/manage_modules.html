@@ -69,7 +69,7 @@ document.getElementById('install-module-form').addEventListener('submit', functi
     resultDiv.classList.remove('d-none');
     resultDiv.innerHTML = '<div class="alert alert-info">Instalando módulo...</div>';
     
-    fetch('{{ url_for("install_module") }}', {
+    fetch('{{ url_for("admin_modules.install_module") }}', {
         method: 'POST',
         body: formData
     })

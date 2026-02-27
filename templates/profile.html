@@ -23,8 +23,8 @@
                     <div class="col-md-6">
                         <h4 style="color: var(--text-primary);">Acciones Rápidas</h4>
                         <div class="d-grid gap-2">
-                            <a href="{{ url_for('index') }}" class="btn btn-primary">Ir a Procesar Archivos</a>
-                            <a href="{{ url_for('manage_codes') }}" class="btn btn-success">Gestionar Códigos Python</a>
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary">Ir a Procesar Archivos</a>
+                            <a href="{{ url_for('codes.manage_codes') }}" class="btn btn-success">Gestionar Códigos Python</a>
                         </div>
                     </div>
                 </div>
@@ -34,7 +34,7 @@
         <div class="card shadow-lg mb-4">
             <div class="card-body">
                 <h4 class="card-title" style="color: var(--text-primary);">Cambiar Contraseña</h4>
-                <form method="POST" action="{{ url_for('change_password') }}">
+                <form method="POST" action="{{ url_for('main.change_password') }}">
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="current_password" class="form-label" style="color: var(--text-primary);">Contraseña Actual</label>
@@ -74,7 +74,7 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p style="color: var(--text-muted);">No tienes códigos guardados. <a href="{{ url_for('manage_codes') }}">Crea uno ahora</a></p>
+                <p style="color: var(--text-muted);">No tienes códigos guardados. <a href="{{ url_for('codes.manage_codes') }}">Crea uno ahora</a></p>
                 {% endif %}
             </div>
         </div>

@@ -39,13 +39,13 @@
                                     <td>{{ user.email }}</td>
                                     <td>{{ user.created_at }}</td>
                                     <td>
-                                        <a href="{{ url_for('approve_user', user_id=user.id) }}" class="btn btn-sm btn-success" onclick="return confirm('¿Aprobar la solicitud de registro de este usuario?')">
+                                        <a href="{{ url_for('admin_users.approve_user', user_id=user.id) }}" class="btn btn-sm btn-success" onclick="return confirm('¿Aprobar la solicitud de registro de este usuario?')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-1">
                                                 <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                                             </svg>
                                             Aprobar
                                         </a>
-                                        <a href="{{ url_for('reject_user', user_id=user.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Rechazar y eliminar esta solicitud de registro? Esta acción no se puede deshacer.')">
+                                        <a href="{{ url_for('admin_users.reject_user', user_id=user.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Rechazar y eliminar esta solicitud de registro? Esta acción no se puede deshacer.')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="me-1">
                                                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                                             </svg>
@@ -107,14 +107,14 @@
                                     </td>
                                     <td>{{ user.created_at }}</td>
                                     <td>
-                                        <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{{ url_for('admin_users.edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning">Editar</a>
                                         {% if user.id != current_user.id %}
                                             {% if user.is_admin != 1 %}
-                                            <a href="{{ url_for('make_admin', user_id=user.id) }}" class="btn btn-sm btn-primary" onclick="return confirm('¿Hacer a este usuario administrador?')">Hacer Admin</a>
+                                            <a href="{{ url_for('admin_users.make_admin', user_id=user.id) }}" class="btn btn-sm btn-primary" onclick="return confirm('¿Hacer a este usuario administrador?')">Hacer Admin</a>
                                             {% else %}
-                                            <a href="{{ url_for('remove_admin', user_id=user.id) }}" class="btn btn-sm btn-secondary" onclick="return confirm('¿Quitar admin a este usuario?')">Quitar Admin</a>
+                                            <a href="{{ url_for('admin_users.remove_admin', user_id=user.id) }}" class="btn btn-sm btn-secondary" onclick="return confirm('¿Quitar admin a este usuario?')">Quitar Admin</a>
                                             {% endif %}
-                                            <a href="{{ url_for('delete_user', user_id=user.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este usuario y todos sus códigos? Esta acción no se puede deshacer.')">Eliminar</a>
+                                            <a href="{{ url_for('admin_users.delete_user', user_id=user.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este usuario y todos sus códigos? Esta acción no se puede deshacer.')">Eliminar</a>
                                         {% else %}
                                         <span class="text-muted small">(Tú)</span>
                                         {% endif %}

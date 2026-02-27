@@ -64,7 +64,7 @@
             </div>
             <div class="modal-body">
                 <div id="no-codes-message" class="d-none">
-                    <p class="text-muted">No tienes códigos guardados. <a href="{{ url_for('manage_codes') }}">Crea uno ahora</a></p>
+                    <p class="text-muted">No tienes códigos guardados. <a href="{{ url_for('codes.manage_codes') }}">Crea uno ahora</a></p>
                 </div>
                 <div id="codes-list" class="row">
                     <!-- Los códigos se cargarán aquí dinámicamente -->
@@ -147,7 +147,7 @@ function uploadFile(file) {
     
     loading.classList.remove('d-none');
     
-    fetch('{{ url_for("upload_file") }}', {
+    fetch('{{ url_for("files.upload_file") }}', {
         method: 'POST',
         body: formData,
         headers: {
@@ -239,7 +239,7 @@ function processFile() {
     loading.classList.remove('d-none');
     codeSelectModal.hide();
     
-    fetch('{{ url_for("process_file") }}', {
+    fetch('{{ url_for("files.process_file") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -287,7 +287,7 @@ function showError(message) {
 function cleanupFiles(inputFile, outputFile) {
     // Limpiar después de 30 segundos
     setTimeout(() => {
-        fetch('{{ url_for("cleanup_files") }}', {
+        fetch('{{ url_for("files.cleanup_files") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

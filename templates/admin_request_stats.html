@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas de Consultas - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">
+        <i class="fas fa-chart-line"></i> Estadísticas de Consultas
+    </h2>
+    
+    <!-- Resumen de estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Consultas</h5>
+                    <h2>{{ total_requests }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Tiempo Promedio (ms)</h5>
+                    <h2>{{ "%.2f"|format(avg_response['avg_time'] or 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Tiempo Máximo (ms)</h5>
+                    <h2>{{ "%.2f"|format(avg_response['max_time'] or 0) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Tiempo Mínimo (ms)</h5>
+                    <h2>{{ "%.2f"|format(avg_response['min_time'] or 0) }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter"></i> Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Ruta</label>
+                    <input type="text" name="path" class="form-control" placeholder="Buscar ruta..." value="{{ filter_path }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Método</label>
+                    <select name="method" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="GET" {% if filter_method == 'GET' %}selected{% endif %}>GET</option>
+                        <option value="POST" {% if filter_method == 'POST' %}selected{% endif %}>POST</option>
+                        <option value="PUT" {% if filter_method == 'PUT' %}selected{% endif %}>PUT</option>
+                        <option value="DELETE" {% if filter_method == 'DELETE' %}selected{% endif %}>DELETE</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Código de Estado</label>
+                    <select name="status" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="200" {% if filter_status == '200' %}selected{% endif %}>200 OK</option>
+                        <option value="301" {% if filter_status == '301' %}selected{% endif %}>301 Redirect</option>
+                        <option value="302" {% if filter_status == '302' %}selected{% endif %}>302 Found</option>
+                        <option value="400" {% if filter_status == '400' %}selected{% endif %}>400 Bad Request</option>
+                        <option value="401" {% if filter_status == '401' %}selected{% endif %}>401 Unauthorized</option>
+                        <option value="403" {% if filter_status == '403' %}selected{% endif %}>403 Forbidden</option>
+                        <option value="404" {% if filter_status == '404' %}selected{% endif %}>404 Not Found</option>
+                        <option value="500" {% if filter_status == '500' %}selected{% endif %}>500 Server Error</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Rutas más visitadas -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-route"></i> Rutas Más Visitadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ruta</th>
+                                    <th>Método</th>
+                                    <th>Hits</th>
+                                    <th>Tiempo Avg</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for route in top_routes %}
+                                <tr>
+                                    <td><code>{{ route['route'] }}</code></td>
+                                    <td>
+                                        {% if route['method'] == 'GET' %}
+                                        <span class="badge bg-success">{{ route['method'] }}</span>
+                                        {% elif route['method'] == 'POST' %}
+                                        <span class="badge bg-primary">{{ route['method'] }}</span>
+                                        {% elif route['method'] == 'PUT' %}
+                                        <span class="badge bg-warning">{{ route['method'] }}</span>
+                                        {% elif route['method'] == 'DELETE' %}
+                                        <span class="badge bg-danger">{{ route['method'] }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ route['method'] }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ route['hit_count'] }}</td>
+                                    <td>{{ "%.2f"|format(route['avg_response_time'] or 0) }} ms</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No hay datos aún</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- IPs con más requests -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-globe"></i> IPs con Más Consultas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>IP</th>
+                                    <th>Requests</th>
+                                    <th>Última Solicitud</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ip in top_ips %}
+                                <tr>
+                                    <td><code>{{ ip['ip_address'] }}</code></td>
+                                    <td>{{ ip['request_count'] }}</td>
+                                    <td>{{ ip['last_request'] }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" onclick="blockIP('{{ ip['ip_address'] }}')" title="Bloquear IP">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No hay datos aún</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Códigos de estado -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Resumen de Códigos de Estado HTTP</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for status in status_summary %}
+                        <div class="col-md-2 col-4 mb-2">
+                            {% if status['status_code'] >= 200 and status['status_code'] < 300 %}
+                            <div class="card bg-success text-white">
+                            {% elif status['status_code'] >= 300 and status['status_code'] < 400 %}
+                            <div class="card bg-warning text-white">
+                            {% elif status['status_code'] >= 400 and status['status_code'] < 500 %}
+                            <div class="card bg-danger text-white">
+                            {% elif status['status_code'] >= 500 %}
+                            <div class="card bg-dark text-white">
+                            {% else %}
+                            <div class="card bg-secondary text-white">
+                            {% endif %}
+                                <div class="card-body text-center p-2">
+                                    <h4>{{ status['status_code'] }}</h4>
+                                    <small>{{ status['count'] }} solicitudes</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12 text-center text-muted">No hay datos aún</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabla de logs de requests -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list"></i> Registro de Consultas</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha/Hora</th>
+                            <th>IP</th>
+                            <th>Usuario</th>
+                            <th>Método</th>
+                            <th>Ruta</th>
+                            <th>Estado</th>
+                            <th>Tiempo (ms)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in request_logs %}
+                        <tr>
+                            <td>{{ log['id'] }}</td>
+                            <td><small>{{ log['created_at'] }}</small></td>
+                            <td><code>{{ log['ip_address'] }}</code></td>
+                            <td>{{ log['username'] or 'Anónimo' }}</td>
+                            <td>
+                                {% if log['method'] == 'GET' %}
+                                <span class="badge bg-success">{{ log['method'] }}</span>
+                                {% elif log['method'] == 'POST' %}
+                                <span class="badge bg-primary">{{ log['method'] }}</span>
+                                {% elif log['method'] == 'PUT' %}
+                                <span class="badge bg-warning">{{ log['method'] }}</span>
+                                {% elif log['method'] == 'DELETE' %}
+                                <span class="badge bg-danger">{{ log['method'] }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ log['method'] }}</span>
+                                {% endif %}
+                            </td>
+                            <td><small><code>{{ log['path'] }}</code></small></td>
+                            <td>
+                                {% if log['status_code'] >= 200 and log['status_code'] < 300 %}
+                                <span class="badge bg-success">{{ log['status_code'] }}</span>
+                                {% elif log['status_code'] >= 300 and log['status_code'] < 400 %}
+                                <span class="badge bg-warning">{{ log['status_code'] }}</span>
+                                {% elif log['status_code'] >= 400 and log['status_code'] < 500 %}
+                                <span class="badge bg-danger">{{ log['status_code'] }}</span>
+                                {% elif log['status_code'] >= 500 %}
+                                <span class="badge bg-dark">{{ log['status_code'] }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ log['status_code'] or 'N/A' }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ "%.2f"|format(log['response_time'] or 0) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No hay registros aún</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if total_count > per_page %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% set total_pages = (total_count / per_page)|round|int %}
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page - 1 }}&path={{ filter_path }}&method={{ filter_method }}&status={{ filter_status }}">Anterior</a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Página {{ page }} de {{ total_pages + 1 }}</span>
+                    </li>
+                    {% if page < total_pages + 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page + 1 }}&path={{ filter_path }}&method={{ filter_method }}&status={{ filter_status }}">Siguiente</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para bloquear IP -->
+<div class="modal fade" id="blockIPModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bloquear IP</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas bloquear la IP <strong id="blockIPAddress"></strong>?</p>
+                <div class="mb-3">
+                    <label class="form-label">Razón</label>
+                    <input type="text" id="blockReason" class="form-control" placeholder="Motivo del bloqueo">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Duración</label>
+                    <select id="blockDuration" class="form-select">
+                        <option value="24">24 horas</option>
+                        <option value="72">72 horas</option>
+                        <option value="168">1 semana</option>
+                        <option value="720">1 mes</option>
+                        <option value="permanent">Permanente</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmBlockIP()">Bloquear</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentIPToBlock = '';
+
+function blockIP(ip) {
+    currentIPToBlock = ip;
+    document.getElementById('blockIPAddress').textContent = ip;
+    var modal = new bootstrap.Modal(document.getElementById('blockIPModal'));
+    modal.show();
+}
+
+function confirmBlockIP() {
+    var reason = document.getElementById('blockReason').value;
+    var duration = document.getElementById('blockDuration').value;
+    var permanent = duration === 'permanent';
+    var durationHours = permanent ? 24 : parseInt(duration);
+    
+    fetch('/admin_block_ip', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            ip_address: currentIPToBlock,
+            reason: reason,
+            permanent: permanent,
+            duration: durationHours
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error al bloquear IP');
+    });
+}
+</script>
+{% endblock %}
