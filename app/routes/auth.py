@@ -21,7 +21,7 @@ def login():
     conn.close()
     
     if user_count['count'] == 0:
-        return redirect(url_for('register'))
+        return redirect(url_for('auth.register'))
     
     if request.method == 'POST':
         login_input = request.form['email']  # Puede ser email o username
@@ -51,7 +51,7 @@ def login():
             # Verificar si el usuario está aprobado o es admin
             if status != 'approved' and is_admin != 1:
                 flash('Tu cuenta está pendiente de aprobación. Por favor, espera a que un administrador apruebe tu solicitud.', 'warning')
-                return redirect(url_for('login'))
+                return redirect(url_for('auth.login'))
             
             user_obj = User(user['id'], user['username'], user['email'], user['password'], is_admin, status)
             login_user(user_obj)
@@ -65,7 +65,7 @@ def login():
                 print(f"Error al registrar stats de login: {e}")
             
             flash('Inicio de sesión exitoso', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         else:
             flash('Credenciales inválidas', 'danger')
     
@@ -119,7 +119,7 @@ def register():
                 flash('Registro exitoso! Has sido registrado como administrador.', 'success')
             else:
                 flash('Registro exitoso! Tu solicitud está pendiente de aprobación. Un administrador revisará tu cuenta pronto.', 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('auth.login'))
         except Exception as e:
             flash('El nombre de usuario o email ya existe', 'danger')
             return redirect(url_for('register'))
