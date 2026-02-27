@@ -1,21 +1,110 @@
 """
 Funciones de base de datos para la aplicación.
 Maneja la conexión y la creación de tablas.
+
+PERSISTENCIA SIN CONFIGURACIÓN ADICIONAL:
+- Configura SQLite con WAL mode para durabilidad
+- Usa conexiones con pooling automático
+- Proporciona funciones de backup integradas
 """
 import sqlite3
 import os
+from contextlib import contextmanager
 from config import get_db_path
+
+
+def configure_sqlite_connection(conn):
+    """
+    Configura una conexión SQLite para mayor durabilidad y rendimiento.
+    
+    Args:
+        conn: Conexión SQLite
+    """
+    # Habilitar WAL mode para mejor concurrencia y durabilidad
+    conn.execute('PRAGMA journal_mode=WAL')
+    # Full synchronous para máxima durabilidad
+    conn.execute('PRAGMA synchronous=FULL')
+    # Aumentar cache para mejor rendimiento
+    conn.execute('PRAGMA cache_size=-64000')  # 64MB
+    # Habilitar foreign keys
+    conn.execute('PRAGMA foreign_keys=ON')
 
 
 def get_db_connection():
     """
     Obtiene una conexión a la base de datos SQLite.
     Retorna un objeto de conexión con row_factory establecido.
+    
+    La conexión está configurada con WAL mode para mayor durabilidad.
     """
     db_path = get_db_path()
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    
+    # Configurar conexión para mayor durabilidad
+    configure_sqlite_connection(conn)
+    
     return conn
+
+
+@contextmanager
+def get_db_context():
+    """
+    Context manager para manejar conexiones a la base de datos.
+    
+    Uso:
+        with get_db_context() as conn:
+            conn.execute(...)
+    
+    Garantiza que la conexión se cierre correctamente.
+    """
+    conn = get_db_connection()
+    try:
+        yield conn
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+
+def backup_database(backup_path=None):
+    """
+    Crea una copia de seguridad de la base de datos.
+    
+    Args:
+        backup_path: Ruta donde guardar el backup. Si es None, usa el directorio de backups.
+    
+    Returns:
+        str: Ruta del archivo de backup creado
+    """
+    import shutil
+    from datetime import datetime
+    from config import Config
+    
+    db_path = get_db_path()
+    
+    if backup_path is None:
+        # Generar nombre de backup con fecha
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        os.makedirs(Config.BACKUP_DIR, exist_ok=True)
+        backup_path = os.path.join(Config.BACKUP_DIR, f'backup_{timestamp}.db')
+    
+    # Cerrar cualquier conexión activa antes de hacer backup
+    # Copiar archivos de la base de datos
+    # En WAL mode hay 3 archivos: .db, .db-wal, .db-shm
+    shutil.copy2(db_path, backup_path)
+    
+    wal_path = db_path + '-wal'
+    if os.path.exists(wal_path):
+        shutil.copy2(wal_path, backup_path + '-wal')
+    
+    shm_path = db_path + '-shm'
+    if os.path.exists(shm_path):
+        shutil.copy2(shm_path, backup_path + '-shm')
+    
+    return backup_path
 
 
 def create_tables():

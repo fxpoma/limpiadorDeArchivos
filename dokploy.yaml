@@ -1,3 +1,12 @@
+# =============================================================================
+# Configuración de Despliegue para Dokploy
+# 
+# PERSISTENCIA SIN CONFIGURACIÓN ADICIONAL:
+# - Los volúmenes se crean automáticamente si no existen
+# - Los datos persisten entre reinicios del contenedor
+# - No se requiere configuración manual
+# =============================================================================
+
 name: Limpiador de Archivos
 id: limpiador-de-archivos
 
@@ -18,28 +27,83 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - FLASK_RUN_PORT=5000
       - FLASK_DEBUG=false
+      - IN_DOCKER=true
     volumes:
-      # Volumen con nombre para persistir la base de datos y backups
-      - limpiador-db:/app/data
-      # Montar solo los directorios de datos, no todo static
-      # Esto evita sobrescribir los archivos CSS/JS del build
-      - limpiador-uploads:/app/static/uploads
-      - limpiador-codes:/app/static/codes
-    restart: always
+      # =====================================================================
+      # VOLÚMENES PERSISTENTES
+      # =====================================================================
+      # Estos volúmenes se crean automáticamente y persisten los datos
+      # entre despliegues y reinicios del contenedor.
+      # 
+      # IMPORTANTE: No eliminar estos volúmenes ya que contienen datos
+      # 
+      # Volumen para base de datos SQLite y backups
+      - type: volume
+        name: limpiador-db
+        container_path: /app/data
+        validation:
+          required: true
+          create_if_not_exists: true
+      
+      # Volumen para archivos subidos por usuarios
+      - type: volume
+        name: limpiador-uploads
+        container_path: /app/static/uploads
+        validation:
+          required: true
+          create_if_not_exists: true
+      
+      # Volumen para códigos guardados
+      - type: volume
+        name: limpiador-codes
+        container_path: /app/static/codes
+        validation:
+          required: true
+          create_if_not_exists: true
+    restart:
+      policy: always
+      delay: 5
+      max_attempts: 3
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     deploy:
       command: /start.sh
+      # Recursos del contenedor
+      cpu_limit: 0.5
+      memory_limit: 512M
 
-# Volúmenes con nombre para persistencia de datos
+# =============================================================================
+# VOLÚMENES PERSISTENTES
+# =============================================================================
+# Definición de volúmenes con nombre.
+# Se crean automáticamente en el primer despliegue.
+# 
+# Para hacer backup de los datos:
+# 1. Detener el contenedor
+# 2. Usar 'dokploy volume ls' para ver los volúmenes
+# 3. Usar 'dokploy volume cp' para copiar los datos
+# =============================================================================
+
 volumes:
   limpiador-db:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/limpiador-db
   limpiador-uploads:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/limpiador-uploads
   limpiador-codes:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/limpiador-codes
