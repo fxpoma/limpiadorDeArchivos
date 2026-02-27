@@ -7,6 +7,7 @@ WORKDIR /app
 # Definir variables de entorno
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV IN_DOCKER=true
 
 # Instalar dependencias del sistema necesarias
 RUN apt-get update && apt-get install -y \
@@ -24,7 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Crear directorios necesarios
-RUN mkdir -p static/uploads static/codes data
+RUN mkdir -p static/uploads static/codes /app/data
 
 # Dar permisos al script de inicio
 RUN chmod +x start.sh
@@ -33,4 +34,4 @@ RUN chmod +x start.sh
 EXPOSE 5000
 
 # Comando de inicio por defecto
-CMD ["/start.sh"]
+CMD ["python", "-c", "from app import create_app; app = create_app(); app.run(host='0.0.0.0', port=5000)"]

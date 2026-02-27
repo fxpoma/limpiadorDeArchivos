@@ -15,6 +15,9 @@ class Config:
     # Obtener la ruta base del proyecto
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
+    # Detectar si está en Docker
+    IN_DOCKER = os.path.exists('/.dockerenv') or os.getenv('IN_DOCKER', 'false').lower() == 'true'
+    
     # Configuración de Flask
     SECRET_KEY = os.getenv('SECRET_KEY', 'tu-clave-secreta-aqui')
     
@@ -31,20 +34,15 @@ class Config:
     # Configuración de debug
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
-    # Directorio de la base de datos (usa volumen persistente en Docker)
-    DB_DIR = '/app/data'
+    # Directorio de la base de datos
+    if IN_DOCKER:
+        DB_DIR = '/app/data'
+    else:
+        DB_DIR = os.path.join(BASE_DIR, 'data')
     DB_PATH = os.path.join(DB_DIR, 'database.db') if DB_DIR else 'database.db'
 
 
 def get_db_path():
     """Obtiene la ruta de la base de datos, creando el directorio si es necesario"""
-    # Usar la ruta absoluta del directorio base
-    if Config.DB_DIR.startswith('/app/data'):
-        # Es Docker - usar la ruta del volumen
-        os.makedirs(Config.DB_DIR, exist_ok=True)
-        return Config.DB_PATH
-    else:
-        # Es desarrollo local
-        db_dir = os.path.join(Config.BASE_DIR, 'data')
-        os.makedirs(db_dir, exist_ok=True)
-        return os.path.join(db_dir, 'database.db')
+    os.makedirs(Config.DB_DIR, exist_ok=True)
+    return Config.DB_PATH
