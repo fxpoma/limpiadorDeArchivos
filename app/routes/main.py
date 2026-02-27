@@ -19,18 +19,33 @@ def debug_db():
     db_path = get_db_path()
     conn = get_db_connection()
     
+    # Obtener lista de tablas
+    tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    
     # Contar usuarios
     user_count = conn.execute('SELECT COUNT(*) as count FROM users').fetchone()
     
     # Obtener usuarios
     users = conn.execute('SELECT id, username, email, is_admin, status FROM users').fetchall()
+    
+    # Obtener información de otras tablas
+    table_counts = {}
+    for table in tables:
+        table_name = table['name']
+        try:
+            count = conn.execute(f'SELECT COUNT(*) as count FROM {table_name}').fetchone()
+            table_counts[table_name] = count['count']
+        except:
+            table_counts[table_name] = 'error'
+    
     conn.close()
     
     return jsonify({
         'db_path': db_path,
         'db_exists': os.path.exists(db_path),
         'user_count': user_count['count'],
-        'users': [dict(u) for u in users]
+        'users': [dict(u) for u in users],
+        'tables': table_counts
     })
 
 
