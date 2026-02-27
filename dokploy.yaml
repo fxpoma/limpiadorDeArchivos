@@ -19,10 +19,12 @@ services:
       - FLASK_RUN_PORT=5000
       - FLASK_DEBUG=false
     volumes:
-      # Volumen con nombre para persistir la base de datos
+      # Volumen con nombre para persistir la base de datos y backups
       - limpiador-db:/app/data
-      # Archivos estáticos
-      - ./static:/app/static
+      # Montar solo los directorios de datos, no todo static
+      # Esto evita sobrescribir los archivos CSS/JS del build
+      - limpiador-uploads:/app/static/uploads
+      - limpiador-codes:/app/static/codes
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
@@ -36,4 +38,8 @@ services:
 # Volúmenes con nombre para persistencia de datos
 volumes:
   limpiador-db:
+    driver: local
+  limpiador-uploads:
+    driver: local
+  limpiador-codes:
     driver: local
