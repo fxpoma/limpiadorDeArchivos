@@ -2,13 +2,36 @@
 Rutas principales.
 Maneja index, profile y cambio de contraseña.
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from flask_bcrypt import Bcrypt
 from app.models import get_db_connection
 from app.services import update_daily_stats
+import os
 
 bp = Blueprint('main', __name__)
+
+
+@bp.route('/debug/db')
+def debug_db():
+    """Ruta de debug para verificar la base de datos"""
+    from config import get_db_path
+    db_path = get_db_path()
+    conn = get_db_connection()
+    
+    # Contar usuarios
+    user_count = conn.execute('SELECT COUNT(*) as count FROM users').fetchone()
+    
+    # Obtener usuarios
+    users = conn.execute('SELECT id, username, email, is_admin, status FROM users').fetchall()
+    conn.close()
+    
+    return jsonify({
+        'db_path': db_path,
+        'db_exists': os.path.exists(db_path),
+        'user_count': user_count['count'],
+        'users': [dict(u) for u in users]
+    })
 
 
 @bp.route('/')
