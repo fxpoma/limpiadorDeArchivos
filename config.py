@@ -34,12 +34,9 @@ class Config:
     # Configuración de debug
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
-    # Directorio de la base de datos
-    if IN_DOCKER:
-        DB_DIR = '/app/data'
-    else:
-        DB_DIR = os.path.join(BASE_DIR, 'data')
-    DB_PATH = os.path.join(DB_DIR, 'database.db') if DB_DIR else 'database.db'
+    # Directorio de la base de datos (siempre /app/data para compatibilidad con Docker)
+    DB_DIR = '/app/data'
+    DB_PATH = os.path.join(DB_DIR, 'database.db')
 
 
 def get_db_path():
