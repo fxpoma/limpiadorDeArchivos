@@ -115,12 +115,14 @@ def create_app():
     from app.routes.admin.modules import bp as admin_modules_bp
     from app.routes.admin.stats import bp as admin_stats_bp
     from app.routes.admin.requests import bp as admin_requests_bp
+    from app.routes.admin.backup import bp as admin_backup_bp
     
     app.register_blueprint(admin_users_bp)
     app.register_blueprint(admin_codes_bp)
     app.register_blueprint(admin_modules_bp)
     app.register_blueprint(admin_stats_bp)
     app.register_blueprint(admin_requests_bp)
+    app.register_blueprint(admin_backup_bp)
     
     # Rutas de API
     from app.routes.api.stats import bp as api_stats_bp

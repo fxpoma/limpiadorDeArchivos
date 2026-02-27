@@ -25,7 +25,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Crear directorios necesarios
-RUN mkdir -p static/uploads static/codes /app/data
+RUN mkdir -p static/uploads static/codes /app/data /app/data/backups
 
 # Dar permisos al script de inicio
 RUN chmod +x start.sh
